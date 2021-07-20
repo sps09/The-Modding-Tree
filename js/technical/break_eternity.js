@@ -1791,7 +1791,8 @@
     Decimal.prototype.ln = function () {
       if (this.sign <= 0)
       {
-        return Decimal.dNaN;
+        //return Decimal.dNaN; THIS IS THE OLD THING
+        return Decimal.fromComponents(-1, 0, Infinity) //MIGHT CAUSE BIG ISSUES
       }
       else if (this.layer === 0)
       {
@@ -1820,20 +1821,22 @@
       var a = this;
       var b = decimal;
 
-      //special case: if a is 0, then return 0
-      if (a.sign === 0) { return a; }
       //special case: if a is 1, then return 1
       if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
+      //special case (pg): if a=b=0 then return 1
+      if (a.sign === 0 && b.sign === 0) { return FC_NN(1, 0, 1);} 
+      //special case: if a is 0, then return 0
+      if (a.sign === 0) { return a; }
       //special case: if b is 0, then return 1
       if (b.sign === 0) { return FC_NN(1, 0, 1); }
       //special case: if b is 1, then return a
       if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
+
+      var needToNegate = a.sign === -1 && (b.toNumber() % 2 === 1 || b.toNumber() % 2 === -1)
       
       var result = (a.absLog10().mul(b)).pow10();
 
-      if (this.sign === -1 && b.toNumber() % 2 === 1) {
-        return result.neg();
-      }
+      if (needToNegate) return result.neg();
 
       return result;
     };
